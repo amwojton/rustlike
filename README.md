@@ -3,7 +3,7 @@ A simple roguelike game written in Rust.
 
 I'll be following along with [RoguelikeDev Does The Complete Roguelike Tutorial 2020](https://www.reddit.com/r/roguelikedev/comments/grccvt/roguelikedev_does_the_complete_roguelike_tutorial/) (although I started a bit late during week 3). Will probably continue messing around with it between weeks/after the tutorial is over.
 
-I'll be using this as an opportunity to both learn a bit more about both game design/development and Rust itself, which are two things I've had an interest in for quite a while now, but never got around to experimenting with.
+I'll be using this as an opportunity to learn a bit more about both game design/development and Rust itself, which are two things I've had an interest in for quite a while now, but never got around to experimenting with.
 
 The Rust version of the tutorial I'll be using is Tomas Sedovic's, which can be found [here](https://tomassedovic.github.io/roguelike-tutorial/).
 

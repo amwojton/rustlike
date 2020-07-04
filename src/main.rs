@@ -9,6 +9,7 @@ const LIMIT_FPS: i32 = 20;  // Number of times per second game loop will be exec
 
 struct Tcod {
     root: Root,
+    con: Offscreen,
 }
 
 fn handle_keys(tcod: &mut Tcod, player_x: &mut i32, player_y: &mut i32) -> bool {
@@ -51,17 +52,31 @@ fn main() {
         .title("Rustlike")
         .init();
 
-    let mut tcod = Tcod {root};
+    let con = Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    let mut tcod = Tcod {root, con};
 
     let mut player_x = SCREEN_WIDTH / 2;
     let mut player_y = SCREEN_HEIGHT / 2;
 
     // Game loop
     while !tcod.root.window_closed() {
-        tcod.root.set_default_foreground(WHITE);
-        tcod.root.clear();
-        tcod.root
+        tcod.con.set_default_foreground(WHITE);
+        tcod.con.clear();
+        tcod.con
             .put_char(player_x, player_y, '@', BackgroundFlag::None);
+
+        // Blit the contents of "con" to the root console and present it
+        blit(
+            &tcod.con,
+            (0, 0),
+            (SCREEN_WIDTH, SCREEN_HEIGHT),
+            &mut tcod.root,
+            (0, 0),
+            1.0,
+            1.0
+        );
+
         tcod.root.flush();
 
         // Handle keys and exit game if needed

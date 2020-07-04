@@ -3,6 +3,7 @@ use std::cmp;
 use rand::Rng;
 use tcod::colors::*;
 use tcod::console::*;
+use tcod::map::{FovAlgorithm, Map as FovMap};
 
 // Actual size of the window
 const SCREEN_WIDTH: i32 = 80;
@@ -17,14 +18,21 @@ const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 
+const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic; // Default fov algorithm
+const FOV_LIGHT_WALLS: bool = true; // Light walls or not
+const TORCH_RADIUS: i32 = 10;
+
 const LIMIT_FPS: i32 = 20; // Number of times per second game loop will be executed
 
 const COLOR_DARK_WALL: Color = Color {r: 0, g: 0, b: 100};
+const COLOR_LIGHT_WALL: Color = Color {r: 130, g: 110, b: 50};
 const COLOR_DARK_GROUND: Color = Color {r: 50, g: 50, b: 150};
+const COLOR_LIGHT_GROUND: Color = Color {r: 200, g: 180, b: 50};
 
 struct Tcod {
     root: Root,
-    con: Offscreen
+    con: Offscreen,
+    fov: FovMap
 }
 
 type Map = Vec<Vec<Tile>>;
@@ -204,22 +212,35 @@ fn make_map(player: &mut Object) -> Map {
     map
 }
 
-fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object]) {
+fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object], fov_recompute: bool) {
+    if fov_recompute {
+        // Recompute fov if needed (the player moved or something)
+        let player = &objects[0];
+        tcod.fov.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
+    }
+
     // Go through all tiles, and set their background color
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
+            let visible = tcod.fov.is_in_fov(x, y);
             let wall = game.map[x as usize][y as usize].block_sight;
-            if wall {
-                tcod.con.set_char_background(x, y, COLOR_DARK_WALL, BackgroundFlag::Set);
-            } else {
-                tcod.con.set_char_background(x, y, COLOR_DARK_GROUND, BackgroundFlag::Set);
-            }
+            let color = match(visible, wall) {
+                // Outside fov
+                (false, true) => COLOR_DARK_WALL,
+                (false, false) => COLOR_DARK_GROUND,
+                // Inside fov
+                (true, true) => COLOR_LIGHT_WALL,
+                (true, false) => COLOR_LIGHT_GROUND
+            };
+            tcod.con.set_char_background(x, y, color, BackgroundFlag::Set);
         }
     }
 
     // Draw all objects in the list
     for object in objects {
-        object.draw(&mut tcod.con);
+        if tcod.fov.is_in_fov(object.x, object.y) {
+            object.draw(&mut tcod.con);
+        }
     }
 
     // Blit the contents of "con" to the root console and present it
@@ -275,9 +296,11 @@ fn main() {
         .title("Rustlike")
         .init();
 
-    let con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
-
-    let mut tcod = Tcod {root, con};
+    let mut tcod = Tcod {
+        root,
+        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT)
+    };
 
     // Create object representing the player
     let player = Object::new(0, 0, '@', WHITE);
@@ -293,6 +316,21 @@ fn main() {
         map: make_map(&mut objects[0])
     };
 
+    // Populate the fov map, according to the generated map
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            tcod.fov.set(
+                x,
+                y,
+                !game.map[x as usize][y as usize].block_sight,
+                !game.map[x as usize][y as usize].blocked
+            )
+        }
+    }
+
+    // Force fov recompute first time through the game loop
+    let mut previous_player_position = (-1, -1);
+
     // Main game loop
     while !tcod.root.window_closed() {
         // Clear the screen of the previous frame
@@ -303,12 +341,14 @@ fn main() {
         }
 
         // Render the screen
-        render_all(&mut tcod, &game, &objects);
+        let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
+        render_all(&mut tcod, &game, &objects, fov_recompute);
 
         tcod.root.flush();
 
         // Handle keys and exit game if needed
         let player = &mut objects[0];
+        previous_player_position = (player.x, player.y);
         let exit = handle_keys(&mut tcod, &game, player);
         if exit {
             break;

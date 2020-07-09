@@ -164,6 +164,14 @@ impl Object {
                 fighter.hp -= damage;
             }
         }
+
+        // Check for death, call the death function
+        if let Some(fighter) = self.fighter {
+            if fighter.hp <= 0 {
+                self.alive = false;
+                fighter.on_death.callback(self);
+            }
+        }
     }
 
     pub fn attack(&mut self, target: &mut Object) {
@@ -232,7 +240,25 @@ struct Fighter {
     max_hp: i32,
     hp: i32,
     defense: i32,
-    power: i32
+    power: i32,
+    on_death: DeathCallback
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum DeathCallback {
+    Player,
+    Monster
+}
+
+impl DeathCallback {
+    fn callback(self, object: &mut Object) {
+        use DeathCallback::*;
+        let callback: fn(&mut Object) = match self {
+            Player => player_death,
+            Monster => monster_death
+        };
+        callback(object);
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -361,17 +387,20 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     max_hp: 10,
                     hp: 10,
                     defense: 0,
-                    power: 3
+                    power: 3,
+                    on_death: DeathCallback::Monster
                 });
                 orc.ai = Some(Ai::Basic);
                 orc
             } else {
+                // Create a troll
                 let mut troll = Object::new(x, y, 'T', "troll", DARKER_GREEN, true);
                 troll.fighter = Some(Fighter {
                     max_hp: 16,
                     hp: 16,
                     defense: 1,
-                    power: 4
+                    power: 4,
+                    on_death: DeathCallback::Monster
                 });
                 troll.ai = Some(Ai::Basic);
                 troll
@@ -415,11 +444,13 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
         }
     }
 
+    // Sort so than non-blocking objects come first
+    let mut to_draw: Vec<_> = objects.iter().filter(|o| tcod.fov.is_in_fov(o.x, o.y)).collect();
+    to_draw.sort_by(|o1, o2| {o1.blocks.cmp(&o2.blocks)});
+
     // Draw all objects in the list
-    for object in objects {
-        if tcod.fov.is_in_fov(object.x, object.y) {
-            object.draw(&mut tcod.con);
-        }
+    for object in &to_draw {
+        object.draw(&mut tcod.con);
     }
 
     // Show the player's stats
@@ -452,7 +483,7 @@ fn player_move_or_attack(dx: i32, dy: i32, game: &Game, objects: &mut [Object]) 
     let y = objects[PLAYER].y + dy;
 
     // Try to find an attackable object there
-    let target_id = objects.iter().position(|object| object.pos() == (x, y));
+    let target_id = objects.iter().position(|object| object.fighter.is_some() && object.pos() == (x, y));
 
     // Attack if target found, move otherwise
     match target_id {
@@ -521,6 +552,27 @@ enum PlayerAction {
     Exit
 }
 
+fn player_death(player: &mut Object) {
+    // The game ended
+    println!("You died!");
+
+    // For added effect, transform the player into a corpse
+    player.char = '%';
+    player.color = DARK_RED;
+}
+
+fn monster_death(monster: &mut Object) {
+    // Transform it into a nasty corpse!
+    // It doesn't block, can't be attacked, and doesn't move
+    println!("{} is dead!", monster.name);
+    monster.char = '%';
+    monster.color = DARK_RED;
+    monster.blocks = false;
+    monster.fighter = None;
+    monster.ai = None;
+    monster.name = format!("remains of {}", monster.name);
+}
+
 fn main() {
     tcod::system::set_fps(LIMIT_FPS);
 
@@ -544,7 +596,8 @@ fn main() {
         max_hp: 30,
         hp: 30,
         defense: 2,
-        power: 5
+        power: 5,
+        on_death: DeathCallback::Player
     });
 
     // List of objects with just the player

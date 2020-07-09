@@ -15,7 +15,7 @@ The individual Reddit threads for each week are listed below (to be updated with
 
 * [Week 3](https://www.reddit.com/r/roguelikedev/comments/hif9df/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 4](https://tomassedovic.github.io/roguelike-tutorial/part-4-fov-exploration.html) & [Part 5](https://tomassedovic.github.io/roguelike-tutorial/part-5-combat.html))
 
-* Week 4 ([Part 6](https://tomassedovic.github.io/roguelike-tutorial/part-6-going-berserk.html) & [Part 7](https://tomassedovic.github.io/roguelike-tutorial/part-7-gui.html))
+* [Week 4](https://www.reddit.com/r/roguelikedev/comments/hmn5tb/week_4_parts_6_7_combat_damage_and_building_the/) ([Part 6](https://tomassedovic.github.io/roguelike-tutorial/part-6-going-berserk.html) & [Part 7](https://tomassedovic.github.io/roguelike-tutorial/part-7-gui.html))
 
 * Week 5 ([Part 8](https://tomassedovic.github.io/roguelike-tutorial/part-8-items.html) & [Part 9](https://tomassedovic.github.io/roguelike-tutorial/part-9-spells.html))
 

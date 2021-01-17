@@ -30,6 +30,8 @@ const MAX_ROOMS: i32 = 30;
 const MAX_ROOM_MONSTERS: i32 = 3;
 const MAX_ROOM_ITEMS: i32 = 2;
 
+const HEAL_AMOUNT: i32 = 4;
+
 const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic; // Default fov algorithm
 const FOV_LIGHT_WALLS: bool = true; // Light walls or not
 const TORCH_RADIUS: i32 = 10;
@@ -225,6 +227,16 @@ impl Object {
             game.messages.add(format!("{} attacks {} but it has no effect!", self.name, target.name), WHITE);
         }
     }
+
+    /// Heal by the given amount, without going over the maximum
+    pub fn heal(&mut self, amount: i32) {
+        if let Some(ref mut fighter) = self.fighter {
+            fighter.hp += amount;
+            if fighter.hp > fighter.max_hp {
+                fighter.hp = fighter.max_hp;
+            }
+        }
+    }
 }
 
 /// Move by the given amount, if the destination is not blocked
@@ -342,6 +354,54 @@ fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Item {
     Heal
+}
+
+enum UseResult {
+    UsedUp,
+    Cancelled
+}
+
+fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut[Object]) {
+    use Item::*;
+
+    // Call the "use" function, if it is defined
+    if let Some(item) = game.inventory[inventory_id].item {
+        let on_use = match item {
+            Heal => cast_heal
+        };
+
+        match on_use(inventory_id, tcod, game, objects) {
+            UseResult::UsedUp => {
+                // Destroy after use, unless it was cancelled for some reason
+                game.inventory.remove(inventory_id);
+            }
+
+            UseResult::Cancelled => {
+                game.messages.add("Cancelled", WHITE);
+            }
+        }
+    } else {
+        game.messages.add(
+            format!("The {} cannot be used.", game.inventory[inventory_id].name),
+            WHITE
+        );
+    }
+}
+
+fn cast_heal(_inventory_id: usize, _tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) -> UseResult {
+    // Heal the player
+    if let Some(fighter) = objects[PLAYER].fighter {
+        if fighter.hp == fighter.max_hp {
+            game.messages.add("You are already at full health.", RED);
+            return UseResult::Cancelled;
+        }
+
+        game.messages.add("Your wounds start to feel better!", LIGHT_VIOLET);
+        objects[PLAYER].heal(HEAL_AMOUNT);
+        return UseResult::UsedUp;
+    }
+
+    UseResult::Cancelled
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -784,13 +844,19 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
             DidntTakeTurn
         }
 
-        // Show the inventory
+        // Show the inventory: if an item is selected, use it
         (Key {code: Text, ..}, "i", true) => {
-            inventory_menu(
+            let inventory_index = inventory_menu(
                 &game.inventory,
                 "Press the key next to an item to use it, or any other to cancel.\n",
-                &mut tcod.root);
-            TookTurn
+                &mut tcod.root
+            );
+            
+            if let Some(inventory_index) = inventory_index {
+                use_item(inventory_index, tcod, game, objects);
+            }
+
+            DidntTakeTurn
         }
 
         _ => DidntTakeTurn

@@ -1,11 +1,17 @@
 # rustlike
-A simple roguelike game written in Rust.
+A simple roguelike game written in Rust with the [tcod](https://github.com/tomassedovic/tcod-rs) library.
 
-I'll be following along with [RoguelikeDev Does The Complete Roguelike Tutorial 2020](https://www.reddit.com/r/roguelikedev/comments/grccvt/roguelikedev_does_the_complete_roguelike_tutorial/) (although I started a bit late during week 3). Will probably continue messing around with it between weeks/after the tutorial is over.
+I'll be following along with [RoguelikeDev Does The Complete Roguelike Tutorial 2020](https://www.reddit.com/r/roguelikedev/comments/grccvt/roguelikedev_does_the_complete_roguelike_tutorial/) (although I started a bit late during week 3...and then went 6 months before picking it up again...oops...). Will maybe continue messing around with it after the tutorial is over.
 
 I'll be using this as an opportunity to learn a bit more about both game design/development and Rust itself, which are two things I've had an interest in for quite a while now, but never got around to experimenting with.
 
 The Rust version of the tutorial I'll be using is Tomas Sedovic's, which can be found [here](https://tomassedovic.github.io/roguelike-tutorial/).
+
+# Running the game
+
+Install Rust on your system and use the command `cargo run --release` in a terminal inside the project folder.
+
+#
 
 The individual Reddit threads for each week are listed below (to be updated with links as time goes on):
 
@@ -17,10 +23,10 @@ The individual Reddit threads for each week are listed below (to be updated with
 
 * [Week 4](https://www.reddit.com/r/roguelikedev/comments/hmn5tb/week_4_parts_6_7_combat_damage_and_building_the/) ([Part 6](https://tomassedovic.github.io/roguelike-tutorial/part-6-going-berserk.html) & [Part 7](https://tomassedovic.github.io/roguelike-tutorial/part-7-gui.html))
 
-* Week 5 ([Part 8](https://tomassedovic.github.io/roguelike-tutorial/part-8-items.html) & [Part 9](https://tomassedovic.github.io/roguelike-tutorial/part-9-spells.html))
+* [Week 5](https://www.reddit.com/r/roguelikedev/comments/hqtl8e/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 8](https://tomassedovic.github.io/roguelike-tutorial/part-8-items.html) & [Part 9](https://tomassedovic.github.io/roguelike-tutorial/part-9-spells.html))
 
-* Week 6 ([Part 10](https://tomassedovic.github.io/roguelike-tutorial/part-10-menu-saving.html) & [Part 11](https://tomassedovic.github.io/roguelike-tutorial/part-11-dungeon-progression.html))
+* [Week 6](https://www.reddit.com/r/roguelikedev/comments/huzu88/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 10](https://tomassedovic.github.io/roguelike-tutorial/part-10-menu-saving.html) & [Part 11](https://tomassedovic.github.io/roguelike-tutorial/part-11-dungeon-progression.html))
 
-* Week 7 ([Part 12](https://tomassedovic.github.io/roguelike-tutorial/part-12-monster-item-progression.html) & [Part 13](https://tomassedovic.github.io/roguelike-tutorial/part-13-adventure-gear.html))
+* [Week 7](https://www.reddit.com/r/roguelikedev/comments/hz8ni9/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 12](https://tomassedovic.github.io/roguelike-tutorial/part-12-monster-item-progression.html) & [Part 13](https://tomassedovic.github.io/roguelike-tutorial/part-13-adventure-gear.html))
 
-* Week 8
+* [Week 8](https://www.reddit.com/r/roguelikedev/comments/i3chaq/roguelikedev_does_the_complete_roguelike_tutorial/)

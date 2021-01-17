@@ -27,6 +27,7 @@ const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 const MAX_ROOM_MONSTERS: i32 = 3;
+const MAX_ROOM_ITEMS: i32 = 2;
 
 const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic; // Default fov algorithm
 const FOV_LIGHT_WALLS: bool = true; // Light walls or not
@@ -77,7 +78,8 @@ impl Messages {
 
 struct Game {
     map: Map,
-    messages: Messages
+    messages: Messages,
+    inventory: Vec<Object>
 }
 
 /// A tile of the map and its properties
@@ -152,7 +154,8 @@ struct Object {
     blocks: bool,
     alive: bool,
     fighter: Option<Fighter>,
-    ai: Option<Ai>
+    ai: Option<Ai>,
+    item: Option<Item>
 }
 
 impl Object {
@@ -166,7 +169,8 @@ impl Object {
             blocks: blocks,
             alive: false,
             fighter: None,
-            ai: None
+            ai: None,
+            item: None
         }
     }
 
@@ -257,6 +261,23 @@ fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut
     }
 }
 
+/// Add item to player's inventory and remove it from the map
+fn pick_item_up(object_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
+    if game.inventory.len() >= 26 {
+        game.messages.add(
+            format!(
+                "Your inventory is full, cannot pick up {}.",
+                objects[object_id].name
+            ),
+            RED
+        );
+    } else {
+        let item = objects.swap_remove(object_id);
+        game.messages.add(format!("You picked up a {}!", item.name), GREEN);
+        game.inventory.push(item);
+    }
+}
+
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     // First test the map tile
     if map[x as usize][y as usize].blocked {
@@ -315,6 +336,11 @@ fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &mut Game, objects: &mut [
             monster.attack(player, game);
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Item {
+    Heal
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -443,6 +469,23 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     
             monster.alive = true;
             objects.push(monster);
+        }
+    }
+
+    // Choose random number of items
+    let num_items = rand::thread_rng().gen_range(0, MAX_ROOM_ITEMS + 1);
+
+    for _ in 0..num_items{
+        // Choose random spot for this item
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+
+        // Only place it if the tile is not blocked
+        if !is_blocked(x, y, map, objects) {
+            // Create a healing potion
+            let mut object = Object::new(x, y, '!', "healing potion", VIOLET, false);
+            object.item = Some(Item::Heal);
+            objects.push(object);
         }
     }
 }
@@ -664,6 +707,18 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
             TookTurn
         }
 
+        // Pick up an item
+        (Key {code: Text, ..}, "g", true) => {
+            let item_id = objects
+                .iter()
+                .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
+
+            if let Some(item_id) = item_id {
+                pick_item_up(item_id, game, objects);
+            }
+            DidntTakeTurn
+        }
+
         _ => DidntTakeTurn
     }
 }
@@ -732,7 +787,8 @@ fn main() {
     let mut game = Game {
         // Generate map (at this point it's not drawn to the screen)
         map: make_map(&mut objects),
-        messages: Messages::new()
+        messages: Messages::new(),
+        inventory: vec![]
     };
 
     // Populate the fov map, according to the generated map

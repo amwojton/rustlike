@@ -479,6 +479,24 @@ fn target_tile(tcod: &mut Tcod, game: &mut Game, objects: &[Object], max_range: 
     }
 }
 
+/// Returns a clicked monster inside FOV up to a range, or None if right-clicked
+fn target_monster(tcod: &mut Tcod, game: &mut Game, objects: &[Object], max_range: Option<f32>) -> Option<usize> {
+    loop {
+        match target_tile(tcod, game, objects, max_range) {
+            Some((x, y)) => {
+                // Return the first clicked monster, otherwise continue looping
+                for (id, obj) in objects.iter().enumerate() {
+                    if obj.pos() == (x, y) && obj.fighter.is_some() && id != PLAYER {
+                        return Some(id);
+                    }
+                }
+            }
+
+            None => return None
+        }
+    }
+}
+
 /// Find closest enemy, up to a maximum range, and in the player's FOV
 fn closest_monster(tcod: &Tcod, objects: &[Object], max_range: i32) -> Option<usize> {
     let mut closest_enemy = None;
@@ -539,7 +557,8 @@ fn cast_lightning(_inventory_id: usize, tcod: &mut Tcod, game: &mut Game, object
 
 fn cast_confuse(_inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut[Object],) -> UseResult {
     // Find closest enemy in range and confuse it
-    let monster_id = closest_monster(tcod, objects, CONFUSE_RANGE);
+    game.messages.add("Left-click an anemy to confuse it, or right-click to cancel.", LIGHT_CYAN);
+    let monster_id = target_monster(tcod, game, objects, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
 

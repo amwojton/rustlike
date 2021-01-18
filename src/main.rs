@@ -35,6 +35,8 @@ const LIGHTNING_DAMAGE: i32 = 40;
 const LIGHTNING_RANGE: i32 = 5;
 const CONFUSE_RANGE: i32 = 8;
 const CONFUSE_NUM_TURNS: i32 = 10;
+const FIREBALL_RADIUS: i32 = 3;
+const FIREBALL_DAMAGE: i32 = 12;
 
 const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic; // Default fov algorithm
 const FOV_LIGHT_WALLS: bool = true; // Light walls or not
@@ -241,6 +243,11 @@ impl Object {
             }
         }
     }
+
+    /// Return the distance to some coordinates
+    pub fn distance(&self, x: i32, y: i32) -> f32 {
+        (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
+    }
 }
 
 /// Move by the given amount, if the destination is not blocked
@@ -404,7 +411,8 @@ fn ai_confused(monster_id: usize, _tcod: &Tcod, game: &mut Game, objects: &mut [
 enum Item {
     Heal,
     Lightning,
-    Confuse
+    Confuse,
+    Fireball
 }
 
 enum UseResult {
@@ -420,7 +428,8 @@ fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut
         let on_use = match item {
             Heal => cast_heal,
             Lightning => cast_lightning,
-            Confuse => cast_confuse
+            Confuse => cast_confuse,
+            Fireball => cast_fireball
         };
 
         match on_use(inventory_id, tcod, game, objects) {
@@ -438,6 +447,35 @@ fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut
             format!("The {} cannot be used.", game.inventory[inventory_id].name),
             WHITE
         );
+    }
+}
+
+/// Return the position of a tile left-clicked in player's FOV (optionally in a range), or (None, None) if right-clicked
+fn target_tile(tcod: &mut Tcod, game: &mut Game, objects: &[Object], max_range: Option<f32>) -> Option<(i32, i32)> {
+    use tcod::input::KeyCode::Escape;
+    loop {
+        // Render the screen. This erases the inventory and shows the names of objects under the mouse
+        tcod.root.flush();
+        let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
+        match event {
+            Some(Event::Mouse(m)) => tcod.mouse = m,
+            Some(Event::Key(k)) => tcod.key = k,
+            None => tcod.key = Default::default()
+        }
+        render_all(tcod, game, objects, false);
+
+        let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
+
+        // Accept the target if the player clicked in FOV, and in case a range is specified, if it's in that range
+        let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
+        let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
+        if tcod.mouse.lbutton_pressed && in_fov && in_range {
+            return Some((x, y));
+        }
+
+        if tcod.mouse.rbutton_pressed || tcod.key.code == Escape {
+            return None; // Cancel if the player right-clicked or pressed Escape
+        }
     }
 }
 
@@ -525,6 +563,38 @@ fn cast_confuse(_inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects:
         game.messages.add("No enemy is close enough to strike.", RED);
         UseResult::Cancelled
     }
+}
+
+fn cast_fireball(_inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut [Object]) -> UseResult {
+    // Ask the player for a target tile to throw a fireball at
+    game.messages.add("Left-click a target tile for the fireball, or right-click to cancel.", LIGHT_CYAN);
+    let (x, y) = match target_tile(tcod, game, objects, None) {
+        Some(tile_pos) => tile_pos,
+        None => return UseResult::Cancelled
+    };
+
+    game.messages.add(
+        format!(
+            "The fireball explodes, burning everything within {} tiles!",
+            FIREBALL_RADIUS
+        ),
+        ORANGE
+    );
+
+    for obj in objects {
+        if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
+            game.messages.add(
+                format!(
+                    "The {} gets burned for {} hit points.",
+                    obj.name, FIREBALL_DAMAGE
+                ),
+                ORANGE
+            );
+            obj.take_damage(FIREBALL_DAMAGE, game);
+        }
+    }
+
+    UseResult::UsedUp
 }
 
 fn create_room(room: Rect, map: &mut Map) {
@@ -676,6 +746,11 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 // Create a lightning bolt scroll (10% chance)
                 let mut object = Object::new(x, y, '#', "scroll of lightning bolt", LIGHT_YELLOW, false);
                 object.item = Some(Item::Lightning);
+                object
+            } else if dice < 0.7 + 0.1 + 0.1 {
+                // Create a fireball scroll (10% chance)
+                let mut object = Object::new(x, y, '#', "scroll of fireball", LIGHT_YELLOW, false);
+                object.item = Some(Item::Fireball);
                 object
             } else {
                 // Create a confuse scroll (10% chance)

@@ -450,6 +450,13 @@ fn use_item(inventory_id: usize, tcod: &mut Tcod, game: &mut Game, objects: &mut
     }
 }
 
+fn drop_item(inventory_id: usize, game: &mut Game, objects: &mut Vec<Object>) {
+    let mut item = game.inventory.remove(inventory_id);
+    item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
+    game.messages.add(format!("You dropped a {}.", item.name), YELLOW);
+    objects.push(item);
+}
+
 /// Return the position of a tile left-clicked in player's FOV (optionally in a range), or (None, None) if right-clicked
 fn target_tile(tcod: &mut Tcod, game: &mut Game, objects: &[Object], max_range: Option<f32>) -> Option<(i32, i32)> {
     use tcod::input::KeyCode::Escape;
@@ -1085,6 +1092,21 @@ fn handle_keys(tcod: &mut Tcod, game: &mut Game, objects: &mut Vec<Object>) -> P
             
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, tcod, game, objects);
+            }
+
+            DidntTakeTurn
+        }
+
+        // Show the inventory: if an item is selected, drop it
+        (Key {code: Text, ..}, "d", true) => {
+            let inventory_index = inventory_menu(
+                &game.inventory,
+                "Press the key next to an item to drop it, or any other to cancel. \n",
+                &mut tcod.root
+            );
+
+            if let Some(inventory_index) = inventory_index {
+                drop_item(inventory_index, game, objects);
             }
 
             DidntTakeTurn

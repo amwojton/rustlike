@@ -1,32 +1,54 @@
-# rustlike
+# rustlike (or: Tomb of the Lost Rustaceans)
 A simple roguelike game written in Rust with the [tcod](https://github.com/tomassedovic/tcod-rs) library.
 
-I'll be following along with [RoguelikeDev Does The Complete Roguelike Tutorial 2020](https://www.reddit.com/r/roguelikedev/comments/grccvt/roguelikedev_does_the_complete_roguelike_tutorial/) (although I started a bit late during week 3...and then went 6 months before picking it up again...oops...). Will maybe continue messing around with it after the tutorial is over.
+This project was originally meant to be part of [RoguelikeDev Does The Complete Roguelike Tutorial 2020](https://www.reddit.com/r/roguelikedev/comments/grccvt/roguelikedev_does_the_complete_roguelike_tutorial/). Will maybe continue messing around with it afterwards.
 
 I'll be using this as an opportunity to learn a bit more about both game design/development and Rust itself, which are two things I've had an interest in for quite a while now, but never got around to experimenting with.
 
-The Rust version of the tutorial I'll be using is Tomas Sedovic's, which can be found [here](https://tomassedovic.github.io/roguelike-tutorial/).
+The Rust version of the tutorial used is Tomas Sedovic's, which can be found [here](https://tomassedovic.github.io/roguelike-tutorial/).
 
-# Running the game
+# How to play
 
-Install Rust on your system and use the command `cargo run --release` in a terminal inside the project folder.
+The objective is simply to see how many floors down into the tomb you can make it before dying.
 
-#
+The game uses a turn-based system; the player moves and then the monsters move. Melee combat is performed by moving into an enemy. Items you find on the ground can be used from your inventory.
 
-The individual Reddit threads for each week are listed below (to be updated with links as time goes on):
+## Controls
 
-* [Week 1](https://www.reddit.com/r/roguelikedev/comments/ha1zty/so_it_begins_roguelikedev_does_the_complete/) ([Part 1](https://tomassedovic.github.io/roguelike-tutorial/part-1-graphics.html))
+Movement: Arrow keys (PgUp/PgDn/End/Home for diagonals) *OR* numpad
 
-* [Week 2](https://www.reddit.com/r/roguelikedev/comments/he3lfo/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 2](https://tomassedovic.github.io/roguelike-tutorial/part-2-object-map.html) & [Part 3](https://tomassedovic.github.io/roguelike-tutorial/part-3-dungeon.html))
+Wait (skip turn): Numpad 5
 
-* [Week 3](https://www.reddit.com/r/roguelikedev/comments/hif9df/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 4](https://tomassedovic.github.io/roguelike-tutorial/part-4-fov-exploration.html) & [Part 5](https://tomassedovic.github.io/roguelike-tutorial/part-5-combat.html))
+Pick up item: G
 
-* [Week 4](https://www.reddit.com/r/roguelikedev/comments/hmn5tb/week_4_parts_6_7_combat_damage_and_building_the/) ([Part 6](https://tomassedovic.github.io/roguelike-tutorial/part-6-going-berserk.html) & [Part 7](https://tomassedovic.github.io/roguelike-tutorial/part-7-gui.html))
+Inventory (use): I
 
-* [Week 5](https://www.reddit.com/r/roguelikedev/comments/hqtl8e/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 8](https://tomassedovic.github.io/roguelike-tutorial/part-8-items.html) & [Part 9](https://tomassedovic.github.io/roguelike-tutorial/part-9-spells.html))
+Inventory (drop): D
 
-* [Week 6](https://www.reddit.com/r/roguelikedev/comments/huzu88/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 10](https://tomassedovic.github.io/roguelike-tutorial/part-10-menu-saving.html) & [Part 11](https://tomassedovic.github.io/roguelike-tutorial/part-11-dungeon-progression.html))
+Character info: C
 
-* [Week 7](https://www.reddit.com/r/roguelikedev/comments/hz8ni9/roguelikedev_does_the_complete_roguelike_tutorial/) ([Part 12](https://tomassedovic.github.io/roguelike-tutorial/part-12-monster-item-progression.html) & [Part 13](https://tomassedovic.github.io/roguelike-tutorial/part-13-adventure-gear.html))
+Go down stairs: <
 
-* [Week 8](https://www.reddit.com/r/roguelikedev/comments/i3chaq/roguelikedev_does_the_complete_roguelike_tutorial/)
+Cast targeted spell: Left-click
+
+Main menu: Esc
+
+## Legend
+
+@ = You
+
+o = Orc
+
+T = Troll
+
+% = Dead body
+
+! = Healing potion
+
+\# = Spell scroll
+
+/ = Sword
+
+[ = Shield
+
+< = Staircase (down)
